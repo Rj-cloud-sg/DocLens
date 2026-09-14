@@ -24,6 +24,14 @@ Context managers (with ... as ...) — guarantees cleanup (like closing a DB con
 
 Connection strings — postgresql://user:password@host:port/database — a pattern used across nearly all database tools, not just SQLAlchemy.
 
+ORM (Object-Relational Mapper) — translates between Python classes/objects and database tables/rows; SQLAlchemy generates real SQL underneath every operation
+VARCHAR / String(255) — same concept in SQL and Python; a variable-length text field with a max length
+
+SQLAlchemy Column, primary_key=True — triggers auto-increment behavior on integer primary keys, same underlying mechanism as SERIAL
+__tablename__ — the explicit bridge between Python class naming conventions and SQL table naming conventions
+
+Sessions (sessionmaker, session.add(), session.commit()) — add() stages a change in memory; commit() executes it as a real transaction against the database. Ties directly to the transaction concept — staging multiple changes before committing lets you group them into one atomic unit.
+
 Stories (problem → solution → alternatives → why)
 
 Story 1 — Git initialized in the wrong location
@@ -54,3 +62,12 @@ Story 5 — Why FastAPI BackgroundTasks instead of Celery/Redis (concept locked 
 Alternatives: Celery + Redis (durable, scales across processes, survives restarts) vs. FastAPI's built-in BackgroundTasks (simple, no extra infrastructure, but jobs are lost on restart, tied to a single process).
 Decision: BackgroundTasks for MVP.
 Why: the project's expected scale doesn't justify the added infrastructure complexity; explicitly an intentional tradeoff, with a clear upgrade path if reliability/scale needs increased.
+
+Story 7 — psql showed 0 rows, Python showed 1 row: apparent contradiction, actually just command order
+Problem: checked psql and saw an empty table right after also seeing a successful Python insert — looked contradictory at first glance.
+Diagnosis: realized the psql check happened before the Python insert script ran, not after — a command-ordering mistake, not a real bug.
+Lesson: before assuming a discrepancy is a bug, check the actual sequence of what ran when — this is a basic but real debugging habit.
+
+New tradeoff (already discussed, worth logging formally now)
+
+Raw SQL first, then ORM — deliberately learned raw SQL and created the first table by hand before introducing SQLAlchemy, so the ORM would be understood as a translation layer rather than an opaque abstraction.
